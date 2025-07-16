@@ -1,0 +1,16 @@
+# Node.js / React
+node_modules/
+
+# Ignore everything in frontend...
+/frontend/*
+
+# ...except src/ and its contents
+!frontend/src/
+!frontend/src/**
+
+
+# Python
+calendar/
+
+
+
