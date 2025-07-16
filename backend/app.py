@@ -1,13 +1,17 @@
-from flask import Flask, jsonify
+# ======= app.py (Flask backend) =======
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pyomo.environ import *
 from datetime import date, timedelta
+import jpholiday
 
 app = Flask(__name__)
 CORS(app)
 
 people = ["Alice", "Bob", "Charlie", "Dana", "Eve"]
-holidays = {date(2025, 7, 17)}  # Add more holidays here
+
+assignments = []  # Holds current schedule for frontend display
+holidays = set()  # Store detected holidays
 
 def cost_fn(d):
     if d.weekday() >= 5 or d in holidays:
@@ -16,9 +20,13 @@ def cost_fn(d):
 
 @app.route("/generate-schedule")
 def generate_schedule():
+    global assignments, holidays
+
     start_date = date(2025, 7, 1)
     end_date = date(2025, 7, 31)
     days = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+
+    holidays = {d for d in days if jpholiday.is_holiday(d)}
 
     model = ConcreteModel()
     model.P = Set(initialize=people)
@@ -31,56 +39,64 @@ def generate_schedule():
         sense=minimize
     )
 
-    # Constraint: One person per day
-    model.one_per_day = ConstraintList()
+    # One person per day
     for d in model.D:
-        model.one_per_day.add(expr=sum(model.x[p, d] for p in model.P) == 1)
+        model.add_component(f"one_per_day_{d}", Constraint(expr=sum(model.x[p, d] for p in model.P) == 1))
 
-    # Constraint: No person on two consecutive days
-    model.no_consecutive = ConstraintList()
+    # No two consecutive days
     sorted_days = sorted(model.D)
     for i in range(len(sorted_days) - 1):
-        d1 = sorted_days[i]
-        d2 = sorted_days[i + 1]
+        d1, d2 = sorted_days[i], sorted_days[i + 1]
         for p in model.P:
-            model.no_consecutive.add(expr=model.x[p, d1] + model.x[p, d2] <= 1)
+            model.add_component(f"no_consecutive_{p}_{d1}", Constraint(expr=model.x[p, d1] + model.x[p, d2] <= 1))
 
-    # Constraint: Equal total assignments (6 or 7 per person)
-    total_days = len(days)
-    base = total_days // len(people)
-    remainder = total_days % len(people)
-
+    # Equal total assignments
+    base = len(days) // len(people)
+    rem = len(days) % len(people)
     for i, p in enumerate(people):
         total = sum(model.x[p, d] for d in model.D)
-        exact_days = base + 1 if i < remainder else base
-        model.add_component(f"{p}_exact_total", Constraint(expr=total == exact_days))
+        exact_days = base + 1 if i < rem else base
+        model.add_component(f"{p}_total_days", Constraint(expr=total == exact_days))
 
-    # Constraint: Equal weekend + holiday assignments
-    W = [d for d in days if d.weekday() >= 5 or d in holidays]
-    w_base = len(W) // len(people)
-    w_rem = len(W) % len(people)
-
+    # Equal hard assignments (weekend or holiday)
+    hard_days = [d for d in days if d.weekday() >= 5 or d in holidays]
+    h_base = len(hard_days) // len(people)
+    h_rem = len(hard_days) % len(people)
     for i, p in enumerate(people):
-        w_sum = sum(model.x[p, d] for d in W)
-        exact_w = w_base + 1 if i < w_rem else w_base
-        model.add_component(f"{p}_exact_hard_days", Constraint(expr=w_sum == exact_w))
+        h_sum = sum(model.x[p, d] for d in hard_days)
+        h_target = h_base + 1 if i < h_rem else h_base
+        model.add_component(f"{p}_hard_days", Constraint(expr=h_sum == h_target))
 
-    # Solve
     solver = SolverFactory("highs")
     solver.solve(model, tee=True)
 
-    # Extract result
-    result = []
+    # Save results
+    assignments = []
     for d in days:
         for p in people:
             if value(model.x[p, d]) > 0.5:
-                result.append({
-                    "title": p,
-                    "date": d.strftime("%Y-%m-%d")
-                })
+                assignments.append({"title": p, "date": d.strftime("%Y-%m-%d")})
 
-    print(result)
-    return jsonify(result)
+    return jsonify(assignments)
+
+@app.route("/update-assignment", methods=["POST"])
+def update_assignment():
+    data = request.json
+    print("Received manual update:", data)
+    global assignments
+    for a in assignments:
+        if a["date"] == data["date"]:
+            a["title"] = data["title"]
+    return jsonify({"status": "updated"})
+
+@app.route("/holidays")
+def get_holidays():
+    start_date = date(2025, 7, 1)
+    end_date = date(2025, 7, 31)
+    days = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+    holidays = {d for d in days if jpholiday.is_holiday(d)}
+    print(jsonify([d.strftime("%Y-%m-%d") for d in sorted(holidays)]))
+    return jsonify([d.strftime("%Y-%m-%d") for d in sorted(holidays)])
 
 if __name__ == "__main__":
     app.run(debug=True)

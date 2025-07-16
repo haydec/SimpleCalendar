@@ -28,6 +28,12 @@
   color: #61dafb;
 }
 
+.calendar-wrapper {
+  width: 80%; /* 2/3 of screen */
+  height: 80%;
+  margin: 0 auto;  /* center horizontally */
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
@@ -35,4 +41,20 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Make calendar event titles larger and centered */
+.fc-event-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  text-align: center; /* horizontally center */
+  width: 100%;
+}
+
+/* Center content vertically and horizontally */
+.fc-event {
+  display: flex;
+  justify-content: center; /* horizontal center */
+  align-items: center;     /* vertical center */
+  padding: 4px;
 }
