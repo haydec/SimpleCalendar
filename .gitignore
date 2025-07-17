@@ -1,16 +1,20 @@
-# Node.js / React
+# Node
 node_modules/
-
-# Ignore everything in frontend...
-/frontend/*
-
-# ...except src/ and its contents
-!frontend/src/
-!frontend/src/**
-
+**/node_modules/
+dist/
+build/
+.env
 
 # Python
+db.sqlite3
 calendar/
+
+# OS/Editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
 
 
 
