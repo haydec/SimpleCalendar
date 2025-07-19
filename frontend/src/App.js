@@ -5,172 +5,145 @@ import interactionPlugin from "@fullcalendar/interaction";
 import axios from "axios";
 import "./App.css";
 
-function isCageChangingF(date, n) {
-  if (date.getDay() !== 5) return false;
-  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-  let fridayCount = 0;
-  for (let d = new Date(firstDay); d <= date; d.setDate(d.getDate() + 1)) {
-    if (d.getDay() === 5) fridayCount++;
-    if (d.toDateString() === date.toDateString()) break;
-  }
-  return fridayCount === n;
-}
+/*************************************
+  Helper utilities
+*************************************/
+const formatDateLocal = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate()
+  ).padStart(2, "0")}`;
 
-function getWeekends(startStr, endStr) {
-  const weekends = [];
+const getWeekends = (startStr, endStr) => {
+  const res = [];
   const start = new Date(startStr);
   const end = new Date(endStr);
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    if (d.getDay() === 0 || d.getDay() === 6) {
-      weekends.push(formatDateLocal(d));
-    }
+    if (d.getDay() === 0 || d.getDay() === 6) res.push(formatDateLocal(d));
   }
-  return weekends;
-}
+  return res;
+};
 
-async function getHolidays(startStr, endStr) {
-  const holidays = [];
+const getCageChangingDays = (startStr, endStr, nths = [2, 4]) => {
   const start = new Date(startStr);
   const end = new Date(endStr);
-  const year = start.getFullYear();
-
-  try {
-    const res = await axios.get(`https://date.nager.at/api/v3/PublicHolidays/${year}/JP`);
-    const allHolidays = res.data;
-    for (const h of allHolidays) {
-      const holidayDate = new Date(h.date);
-      if (holidayDate >= start && holidayDate <= end) {
-        holidays.push({ date: h.date, name: h.localName });
-      }
-    }
-  } catch (err) {
-    console.error("Failed to fetch holidays", err);
+  const fridays = [];
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    if (d.getDay() === 5) fridays.push(new Date(d));
   }
+  return nths
+    .map((n) => fridays[n - 1])
+    .filter(Boolean)
+    .map(formatDateLocal);
+};
 
+const fetchHolidays = async (startStr, endStr) => {
+  const holidays = [];
+  const year = new Date(startStr).getFullYear();
+  try {
+    const { data } = await axios.get(
+      `https://date.nager.at/api/v3/PublicHolidays/${year}/JP`
+    );
+    data.forEach((h) => {
+      if (h.date >= startStr && h.date <= endStr)
+        holidays.push({ date: h.date, name: h.localName });
+    });
+  } catch (e) {
+    console.error("Holiday fetch error", e);
+  }
   return holidays;
-}
+};
 
-function formatDateLocal(date) {
-  return (
-    date.getFullYear() +
-    "-" +
-    String(date.getMonth() + 1).padStart(2, "0") +
-    "-" +
-    String(date.getDate()).padStart(2, "0")
-  );
-}
+/*************************************
+  React component
+*************************************/
+export default function App() {
+  /* visible range */
+  const [range, setRange] = useState(() => {
+    const today = new Date();
+    return {
+      start: formatDateLocal(new Date(today.getFullYear(), today.getMonth(), 1)),
+      end:   formatDateLocal(new Date(today.getFullYear(), today.getMonth() + 1, 0)),
+    };
+  });
 
-function App() {
-  const [events, setEvents] = useState([]);
-  const [holidays, setHolidays] = useState([]);
-  const [loading, setLoading] = useState(false);
+  /* highlight bg events */
+  const [highlightEvents, setHighlightEvents] = useState([]);
 
-  const today = new Date();
-  const startDateStr = formatDateLocal(new Date(today.getFullYear(), today.getMonth(), 1));
-  const endDateRaw = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-  const endDateInclusive = new Date(endDateRaw);
-  endDateInclusive.setDate(endDateRaw.getDate() + 1);
-  const endDateStr = formatDateLocal(endDateInclusive);
+  /* schedule events */
+  const [events, setEvents]       = useState([]);
+  const [loading, setLoading]     = useState(false);
+  const [settingsSent, setSent]   = useState(false);
 
-  const [settingsSent, setSettingsSent] = useState(false);
+  /* recompute + send settings whenever range changes */
+  useEffect(() => {
+    const buildAndSend = async () => {
+      const weekends = getWeekends(range.start, range.end);
+      const cageDays = getCageChangingDays(range.start, range.end);
+      const holidays = await fetchHolidays(range.start, range.end);
 
+      /* build bg events */
+      const bg = [
+        ...weekends.map((d) => ({ start: d, display: "background", backgroundColor: "#D0E6FF" })),
+        ...cageDays.map((d) => ({ start: d, display: "background", backgroundColor: "#FFD6D6" })),
+        ...holidays.map((h) => ({ start: h.date, title: h.name, display: "background", backgroundColor: "#C8FACC" })),
+      ];
+      setHighlightEvents(bg);
+
+      /* send settings to back‑end */
+      const payload = {
+        start_date: range.start,
+        end_date:   range.end,
+        weekends,
+        holidays: holidays.map((h) => h.date),
+        cage_days: cageDays,
+      };
+
+      try {
+        await axios.post("http://localhost:5000/calendar-settings", payload);
+        setSent(true);
+      } catch (e) {
+        console.error("calendar-settings POST failed", e);
+        setSent(false);
+      }
+    };
+    buildAndSend();
+  }, [range]);
+
+  /* schedule generation */
   const generateSchedule = async () => {
-    if (!settingsSent) {
-      console.warn("Schedule generation blocked: settings not sent yet.");
-      return;
-    }
+    if (!settingsSent) return; // guard – shouldn’t happen due to disabled btn
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:5000/generate-schedule");
-      setEvents(res.data);
-    } catch (err) {
-      console.error("Failed to generate schedule", err);
+      const { data } = await axios.get("http://localhost:5000/generate-schedule");
+      setEvents(data);
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    getHolidays(startDateStr, endDateStr).then(setHolidays);
-  }, []);
-
-  useEffect(() => {
-    if (holidays.length === 0) return;
-    const payload = {
-      start_date: startDateStr,
-      end_date: endDateStr,
-      weekends: getWeekends(startDateStr, endDateStr),
-      holidays: holidays.map((h) => h.date),
-      nth_fridays: [2, 4],
-    };
-    axios
-      .post("http://localhost:5000/calendar-settings", payload)
-      .then((res) => {
-        console.log("Calendar settings sent.", res.data);
-        setSettingsSent(true);
-      })
-      .catch((err) => {
-        console.error("Calendar settings error", err);
-        setSettingsSent(false);
-      });
-  }, [holidays]);
-  const handleEventDrop = async (info) => {
-    const { event } = info;
-    const updatedEvent = {
-      title: event.title,
-      date: event.startStr,
-    };
-    try {
-      await axios.post("http://localhost:5000/update-assignment", updatedEvent);
-    } catch (err) {
-      console.error("Failed to update assignment", err);
-      info.revert();
-    }
+  /* range change from calendar */
+  const handleDatesSet = (arg) => {
+    const start = formatDateLocal(arg.start);
+    const end   = formatDateLocal(arg.end);
+    setRange({ start, end });
+    setSent(false);           // disable button until POST succeeds again
   };
 
   return (
-    <div className="App">
-      <h2>Optimized Schedule for July 2025</h2>
-      <button onClick={generateSchedule} disabled={loading}>
-        {loading ? "Generating..." : "Generate Schedule"}
+    <div className="App p-4 space-y-4">
+      <button className="btn" onClick={generateSchedule} disabled={loading || !settingsSent}>
+        {loading ? "Loading…" : "Generate Schedule"}
       </button>
 
-      {holidays.length > 0 && (
-        <div className="calendar-wrapper">
-          <FullCalendar
-            plugins={[dayGridPlugin, interactionPlugin]}
-            initialView="dayGridMonth"
-            initialDate={startDateStr}
-            validRange={{ start: startDateStr, end: endDateStr }}
-            events={events}
-            editable={true}
-            eventDrop={handleEventDrop}
-            fixedWeekCount={false}
-            dayCellDidMount={(arg) => {
-              const dateStr = new Date(Date.UTC(arg.date.getFullYear(), arg.date.getMonth(), arg.date.getDate()))
-                .toISOString()
-                .substring(0, 10);
-              const isWeekend = arg.date.getDay() === 0 || arg.date.getDay() === 6;
-              const isCageChanging = isCageChangingF(arg.date, 2) || isCageChangingF(arg.date, 4);
-              const holiday = holidays.find((h) => h.date === dateStr);
-              const el = arg.el;
-
-              if (isCageChanging) {
-                el.style.backgroundColor = "#FFD6D6";
-                el.title = "Cage Change Friday";
-              } else if (holiday) {
-                el.style.backgroundColor = "#C8FACC";
-                el.title = holiday.name;
-              } else if (isWeekend) {
-                el.style.backgroundColor = "#D0E6FF";
-                el.title = "Weekend";
-              }
-            }}
-          />
-        </div>
-      )}
+      <FullCalendar
+        plugins={[dayGridPlugin, interactionPlugin]}
+        initialView="dayGridMonth"
+        events={[...events, ...highlightEvents]}
+        datesSet={handleDatesSet}
+        editable
+      />
     </div>
   );
 }
-
-export default App;
