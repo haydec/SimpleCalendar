@@ -60,6 +60,8 @@ export default function App() {
   /* visible range */
   const [range, setRange] = useState(() => {
     const today = new Date();
+    console.log("Start Date: ",formatDateLocal(new Date(today.getFullYear(), today.getMonth(), 1)))
+    console.log("Stop Date: ",formatDateLocal(new Date(today.getFullYear(), today.getMonth() + 1, 0)))
     return {
       start: formatDateLocal(new Date(today.getFullYear(), today.getMonth(), 1)),
       end:   formatDateLocal(new Date(today.getFullYear(), today.getMonth() + 1, 0)),
@@ -97,7 +99,8 @@ export default function App() {
         holidays: holidays.map((h) => h.date),
         cage_days: cageDays,
       };
-
+    console.log("Range Start Date: ",range.start)
+    console.log("Range Stop Date: ",range.end)
       try {
         await axios.post("http://localhost:5000/calendar-settings", payload);
         setSent(true);
