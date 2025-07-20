@@ -13,6 +13,14 @@ const formatDateLocal = (date) =>
     date.getDate()
   ).padStart(2, "0")}`;
 
+/* Month helper → returns first & last day (YYYY-MM-DD) */
+const monthBounds = (dateStr) => {
+  const d = new Date(dateStr);
+  const first = new Date(d.getFullYear(), d.getMonth(), 1);
+  const last  = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  return { start: formatDateLocal(first), end: formatDateLocal(last) };
+};
+
 const getWeekends = (startStr, endStr) => {
   const res = [];
   const start = new Date(startStr);
@@ -57,6 +65,15 @@ const fetchHolidays = async (startStr, endStr) => {
   React component
 *************************************/
 export default function App() {
+
+  /* 1 state = the current month (Date set to the 1 st) */
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+
+  
+
   /* visible range */
   const [range, setRange] = useState(() => {
     const today = new Date();
@@ -79,6 +96,7 @@ export default function App() {
   /* recompute + send settings whenever range changes */
   useEffect(() => {
     const buildAndSend = async () => {
+      const { start: monthStart, end: monthEnd } = monthBounds(currentMonth);
       const weekends = getWeekends(range.start, range.end);
       const cageDays = getCageChangingDays(range.start, range.end);
       const holidays = await fetchHolidays(range.start, range.end);
@@ -90,17 +108,17 @@ export default function App() {
         ...holidays.map((h) => ({ start: h.date, title: h.name, display: "background", backgroundColor: "#C8FACC" })),
       ];
       setHighlightEvents(bg);
-
+      
       /* send settings to back‑end */
       const payload = {
-        start_date: range.start,
-        end_date:   range.end,
+        start_date: monthStart, // < - I want these values to be only the values within a single month
+        end_date:   monthEnd, // < - I want these values to be only the values within a single month
         weekends,
         holidays: holidays.map((h) => h.date),
         cage_days: cageDays,
       };
-    console.log("Range Start Date: ",range.start)
-    console.log("Range Stop Date: ",range.end)
+    console.log("Payload Start Date: ",payload["start_date"]) 
+    console.log("Payload Stop Date: ",payload["end_date"])
       try {
         await axios.post("http://localhost:5000/calendar-settings", payload);
         setSent(true);
@@ -139,14 +157,17 @@ export default function App() {
       <button className="btn" onClick={generateSchedule} disabled={loading || !settingsSent}>
         {loading ? "Loading…" : "Generate Schedule"}
       </button>
-
+      <div className="calendar-wrapper">
       <FullCalendar
+        /* make FC obey the 100 % height we forced in CSS */
+        height="100%"
         plugins={[dayGridPlugin, interactionPlugin]}
-        initialView="dayGridMonth"
         events={[...events, ...highlightEvents]}
         datesSet={handleDatesSet}
         editable
+        aspectRatio={1.2} 
       />
+      </div>
     </div>
   );
 }
