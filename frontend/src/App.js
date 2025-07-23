@@ -155,7 +155,7 @@ export default function App() {
   };
 
 
-  const [people, setPeople] = useState(["Alice", "Bob", "Charlie"]);
+  const [people, setPeople] = useState(["Cillian", "Hosana", "Yuka","Yuuka","Hiroko","Hao","Manal","Satya"]);
   const [nameInput, setNameInput] = useState("");
 
   const addPerson = () => {
@@ -191,9 +191,10 @@ export default function App() {
       <div className="people-section mt-6">
         <h3 className="text-lg font-semibold mb-2">People</h3>
 
+        
         <table className="mx-auto border-collapse">
+          
           <caption className="sr-only">Personnel assignment counts</caption>
-
           <thead>
             <tr>
               <th className="border px-4 py-1 bg-gray-100">#</th>
