@@ -24,7 +24,7 @@
 *****************************************************************************/
 .calendar-wrapper {
   flex: 0 0 65%;      /*  ‑‑► fixed 55 % of the row, no growing  */
-  max-width: 1200px;   /*  optional: stops it from getting huge  */
+  max-width: 2000px;   /*  optional: stops it from getting huge  */
   min-width: 400px;   /*  optional: usable on small screens     */
   height: 80vh;
 }
@@ -40,7 +40,8 @@
   3. People summary panel (fixed width)
 *****************************************************************************/
 .people-section {
-  width: 280px;              /* tweak to taste */
+  width: 60%;
+  height: 80%;               
 }
 
 /*****************************************************************************
@@ -73,9 +74,10 @@
 table {
   border-collapse: collapse;
   border: 1px solid #8c8c8c;
-  font-size: 0.75rem;
+  font-size: 1.25rem;
   letter-spacing: 0.5px;
-  width: 100%;
+  width: 80%;
+  height: 100%;
 }
 
 thead, tfoot         { background: #e4f0f5; }
@@ -84,3 +86,12 @@ tbody tr:nth-child(even) { background: #edeef2; }
 
 td:last-of-type { text-align: center; }   /* delete‑button col */
 tfoot td        { font-weight: bold; }
+
+
+.input-row {
+  margin-top: 24px;    /* same as mt-6 */
+  padding-top: 4px;    /* same as pt-1  */
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}

@@ -230,9 +230,9 @@ export default function App() {
         </table>
 
         {/* add‑name input */}
-        <div className="mt-3 flex justify-center gap-2">
+        <div className="input-row">
           <input
-            className="border px-2 py-1"
+            //className="border px-2 py-1"
             placeholder="New name…"
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
