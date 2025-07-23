@@ -11,12 +11,25 @@
     – drives the day‑cell size
     – 80 vw × 70 vh  (adjust the %.s to taste)
 *****************************************************************************/
-.calendar-wrapper {
-  width:  110vw;
-  height: 100vh;
-  margin: 0 auto;
+
+/*@media screen and (orientation: landscape) {
+  .calendar-wrapper{
+    width:80vh;
+    height:80vw;
+  }
 }
-/*
+
+/*@media screen and (orientation: portrait) {
+  .calendar-wrapper{
+    width:80vh;
+    height:80vw;
+   /*or whatever*/
+/*  }
+}
+
+
+
+
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -28,6 +41,12 @@
   table-layout: fixed;        
 }
 */
+
+.calendar-wrapper {
+  width:  70vw;
+  height: 70vh;
+  margin: 0 auto;
+}
 
 /*****************************************************************************
   Slim blue assignment pills
@@ -51,4 +70,49 @@
 .fc .fc-daygrid-day-events { margin-top: auto; }
 
 /* optional: ensure a readable minimum day‑cell height */
-.fc .fc-daygrid-day { min-height: 80px; }
+.fc .fc-daygrid-day { min-height: 10vh; }
+
+
+
+
+
+table {
+  border-collapse: collapse;
+  border: 2px solid rgb(140 140 140);
+  font-family: sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+}
+
+caption {
+  caption-side: bottom;
+  padding: 10px;
+  font-weight: bold;
+}
+
+thead,
+tfoot {
+  background-color: rgb(228 240 245);
+}
+
+th,
+td {
+  border: 1px solid rgb(160 160 160);
+  padding: 8px 10px;
+}
+
+td:last-of-type {
+  text-align: center;
+}
+
+tbody > tr:nth-of-type(even) {
+  background-color: rgb(237 238 242);
+}
+
+tfoot th {
+  text-align: right;
+}
+
+tfoot td {
+  font-weight: bold;
+}

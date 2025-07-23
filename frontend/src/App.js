@@ -92,6 +92,8 @@ export default function App() {
   const [events, setEvents]       = useState([]);
   const [loading, setLoading]     = useState(false);
   const [settingsSent, setSent]   = useState(false);
+  const [personStats, setPersonStats] = useState({});
+  
 
   /* recompute + send settings whenever range changes */
   useEffect(() => {
@@ -152,22 +154,94 @@ export default function App() {
     setSent(false);           // disable button until POST succeeds again
   };
 
+
+  const [people, setPeople] = useState(["Alice", "Bob", "Charlie"]);
+  const [nameInput, setNameInput] = useState("");
+
+  const addPerson = () => {
+    const trimmed = nameInput.trim();
+    if (trimmed && !people.includes(trimmed)) setPeople([...people, trimmed]);
+    setNameInput("");
+  };
+
+  const removePerson = (name) => {
+    setPeople(people.filter((p) => p !== name));
+  };
+
   return (
     <div className="App p-4 space-y-4">
       <button className="btn" onClick={generateSchedule} disabled={loading || !settingsSent}>
         {loading ? "Loading…" : "Generate Schedule"}
       </button>
+
       <div className="calendar-wrapper">
-      <FullCalendar
-        /* make FC obey the 100 % height we forced in CSS */
-        height="100%"
-        plugins={[dayGridPlugin, interactionPlugin]}
-        events={[...events, ...highlightEvents]}
-        datesSet={handleDatesSet}
-        editable
-        aspectRatio={1.2} 
-      />
+        <FullCalendar
+          /* make FC obey the 100 % height we forced in CSS */
+          height="100%"
+          width = "100%"
+          plugins={[dayGridPlugin, interactionPlugin]}
+          events={[...events, ...highlightEvents]}
+          datesSet={handleDatesSet}
+          editable
+          //aspectRatio={1.2} 
+        />
       </div>
+
+      {/* people table */}
+      <div className="people-section mt-6">
+        <h3 className="text-lg font-semibold mb-2">People</h3>
+
+        <table className="mx-auto border-collapse">
+          <caption className="sr-only">Personnel assignment counts</caption>
+
+          <thead>
+            <tr>
+              <th className="border px-4 py-1 bg-gray-100">#</th>
+              <th className="border px-4 py-1 bg-gray-100">Name</th>
+              <th className="border px-4 py-1 bg-gray-100">Week‑days</th>
+              <th className="border px-4 py-1 bg-gray-100">Fridays</th>
+              <th className="border px-4 py-1 bg-gray-100">Weekend / Hol.</th>
+              <th className="border px-4 py-1 bg-gray-100"></th>{/* remove btn */}
+            </tr>
+          </thead>
+
+          <tbody>
+            {people.map((p, idx) => {
+              const s = personStats[p] || { weekday:0, friday:0, weekendHoliday:0 };
+              return (
+                <tr key={p}>
+                  <td className="border px-4 py-1">{idx + 1}</td>
+                  <td className="border px-4 py-1 text-left">{p}</td>
+                  <td className="border px-4 py-1 text-center">{1}</td>
+                  <td className="border px-4 py-1 text-center">{2}</td>
+                  <td className="border px-4 py-1 text-center">{3}</td>
+                  <td className="border px-4 py-1 text-center">
+                    <button onClick={() => removePerson(p)} title="Remove">✕</button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+
+        {/* add‑name input */}
+        <div className="mt-3 flex justify-center gap-2">
+          <input
+            className="border px-2 py-1"
+            placeholder="New name…"
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addPerson()}
+          />
+          <button className="btn" onClick={addPerson}>Add</button>
+        </div>
+      </div>
+
+
+
+
+
     </div>
   );
 }
