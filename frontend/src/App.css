@@ -1,5 +1,5 @@
 /*****************************************************************************
-  Basic app centering
+  0. App shell
 *****************************************************************************/
 .App {
   text-align: center;
@@ -7,49 +7,44 @@
 }
 
 /*****************************************************************************
-  Calendar wrapper
-    – drives the day‑cell size
-    – 80 vw × 70 vh  (adjust the %.s to taste)
+  1. Flex row that holds calendar + table
 *****************************************************************************/
-
-/*@media screen and (orientation: landscape) {
-  .calendar-wrapper{
-    width:80vh;
-    height:80vw;
-  }
-}
-
-/*@media screen and (orientation: portrait) {
-  .calendar-wrapper{
-    width:80vh;
-    height:80vw;
-   /*or whatever*/
-/*  }
-}
-
-
-
-
+.calendar-row {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;   /* center the whole pair */
   align-items: flex-start;
-
-
-/* force the scroll‑grid table to fill the wrapper width */
-/*.fc .fc-scrollgrid {
-  width: 100% !important;     
-  table-layout: fixed;        
-}
-*/
-
-.calendar-wrapper {
-  width:  70vw;
-  height: 70vh;
-  margin: 0 auto;
+  gap: 2rem;                 /* space between panels */
+  margin-top: 1.5rem;
 }
 
 /*****************************************************************************
-  Slim blue assignment pills
+  2. Calendar panel
+      • grows to fill available space
+      • 70 vh height drives row height of day‑grid
+*****************************************************************************/
+.calendar-wrapper {
+  flex: 0 0 65%;      /*  ‑‑► fixed 55 % of the row, no growing  */
+  max-width: 1200px;   /*  optional: stops it from getting huge  */
+  min-width: 400px;   /*  optional: usable on small screens     */
+  height: 80vh;
+}
+
+/* make FullCalendar fill the wrapper */
+.calendar-wrapper .fc {
+  width: 100% !important;
+  height: 100% !important;
+  table-layout: fixed;       /* equal column widths */
+}
+
+/*****************************************************************************
+  3. People summary panel (fixed width)
+*****************************************************************************/
+.people-section {
+  width: 280px;              /* tweak to taste */
+}
+
+/*****************************************************************************
+  4. Day‑grid event “pill” styling
 *****************************************************************************/
 .fc .fc-daygrid-event {
   display: flex;
@@ -65,54 +60,27 @@
 
 .fc .fc-daygrid-event.fc-daygrid-dot-event { padding: 0 4px; }
 
-/* keep events at bottom of cell */
+/* push events to bottom of cell */
 .fc .fc-daygrid-day-frame  { display: flex; flex-direction: column; }
 .fc .fc-daygrid-day-events { margin-top: auto; }
 
-/* optional: ensure a readable minimum day‑cell height */
-.fc .fc-daygrid-day { min-height: 10vh; }
+/* minimum readable day‑cell height */
+.fc .fc-daygrid-day { min-height: 70px; }
 
-
-
-
-
+/*****************************************************************************
+  5. Table styling (plain CSS, Tailwind‑free)
+*****************************************************************************/
 table {
   border-collapse: collapse;
-  border: 1px solid rgb(140 140 140);
-  font-family: sans-serif;
-  font-size: 0.6rem;
-  letter-spacing: 1px;
+  border: 1px solid #8c8c8c;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  width: 100%;
 }
 
-caption {
-  caption-side: bottom;
-  padding: 10px;
-  font-weight: bold;
-}
+thead, tfoot         { background: #e4f0f5; }
+th, td               { border: 1px solid #a0a0a0; padding: 4px 6px; }
+tbody tr:nth-child(even) { background: #edeef2; }
 
-thead,
-tfoot {
-  background-color: rgb(228 240 245);
-}
-
-th,
-td {
-  border: 1px solid rgb(160 160 160);
-  padding: 3px 6px;
-}
-
-td:last-of-type {
-  text-align: center;
-}
-
-tbody > tr:nth-of-type(even) {
-  background-color: rgb(237 238 242);
-}
-
-tfoot th {
-  text-align: right;
-}
-
-tfoot td {
-  font-weight: bold;
-}
+td:last-of-type { text-align: center; }   /* delete‑button col */
+tfoot td        { font-weight: bold; }

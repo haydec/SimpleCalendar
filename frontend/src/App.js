@@ -169,31 +169,35 @@ export default function App() {
   };
 
   return (
-    <div className="App p-4 space-y-4">
-      <button className="btn" onClick={generateSchedule} disabled={loading || !settingsSent}>
-        {loading ? "Loading…" : "Generate Schedule"}
-      </button>
+  <div className="App p-4">
 
+    <button
+      className="btn mb-4"
+      onClick={generateSchedule}
+      disabled={loading || !settingsSent}
+    >
+      {loading ? "Loading…" : "Generate Schedule"}
+    </button>
+
+    {/* ─── calendar + table side‑by‑side ─── */}
+    <div className="calendar-row">
+
+      {/* calendar panel (left) */}
       <div className="calendar-wrapper">
         <FullCalendar
-          /* make FC obey the 100 % height we forced in CSS */
-          height="100%"
-          width = "100%"
+          height="100%"                 /* fills 70 vh wrapper */
           plugins={[dayGridPlugin, interactionPlugin]}
           events={[...events, ...highlightEvents]}
           datesSet={handleDatesSet}
           editable
-          //aspectRatio={1.2} 
         />
       </div>
 
-      {/* people table */}
-      <div className="people-section mt-6">
+      {/* people summary panel (right) */}
+      <div className="people-section">
         <h3 className="text-lg font-semibold mb-2">People</h3>
 
-        
-        <table className="mx-auto border-collapse">
-          
+        <table className="border-collapse w-full">
           <caption className="sr-only">Personnel assignment counts</caption>
           <thead>
             <tr>
@@ -202,20 +206,20 @@ export default function App() {
               <th className="border px-4 py-1 bg-gray-100">Week‑days</th>
               <th className="border px-4 py-1 bg-gray-100">Fridays</th>
               <th className="border px-4 py-1 bg-gray-100">Weekend / Hol.</th>
-              <th className="border px-4 py-1 bg-gray-100"></th>{/* remove btn */}
+              <th className="border px-4 py-1 bg-gray-100"></th>
             </tr>
           </thead>
 
           <tbody>
             {people.map((p, idx) => {
-              const s = personStats[p] || { weekday:0, friday:0, weekendHoliday:0 };
+              const s = personStats[p] || { weekday: 0, friday: 0, weekendHoliday: 0 };
               return (
                 <tr key={p}>
                   <td className="border px-4 py-1">{idx + 1}</td>
                   <td className="border px-4 py-1 text-left">{p}</td>
-                  <td className="border px-4 py-1 text-center">{1}</td>
-                  <td className="border px-4 py-1 text-center">{2}</td>
-                  <td className="border px-4 py-1 text-center">{3}</td>
+                  <td className="border px-4 py-1 text-center">{s.weekday}</td>
+                  <td className="border px-4 py-1 text-center">{s.friday}</td>
+                  <td className="border px-4 py-1 text-center">{s.weekendHoliday}</td>
                   <td className="border px-4 py-1 text-center">
                     <button onClick={() => removePerson(p)} title="Remove">✕</button>
                   </td>
@@ -224,7 +228,6 @@ export default function App() {
             })}
           </tbody>
         </table>
-
 
         {/* add‑name input */}
         <div className="mt-3 flex justify-center gap-2">
@@ -239,10 +242,8 @@ export default function App() {
         </div>
       </div>
 
+    </div> {/* end .calendar-row */}
+  </div>
+);
 
-
-
-
-    </div>
-  );
 }
