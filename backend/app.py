@@ -2,6 +2,9 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pyomo.environ import *
 from datetime import datetime, timedelta
+import polars as pl
+from pathlib import Path
+import calendar  
 
 app = Flask(__name__)
 CORS(app)
@@ -104,6 +107,48 @@ def generate_schedule():
         for d in days for p in people
         if value(m.x[p, d]) > 0.5
     ]
+
+
+    holiday_set = calendar_config["holidays"]          # a set of datetime.date
+
+    df = (
+        pl.DataFrame(assignments)              # ["title", "date"]
+        .with_columns([
+            pl.col("date").str.strptime(pl.Date, "%Y-%m-%d").alias("Date"),
+        ])
+        .with_columns([
+            # ①  full weekday name  →  "%A"
+            pl.col("Date")
+                .dt.strftime("%A")             # Monday, Tuesday, …
+                .alias("Weekday"),
+
+            # ②  holiday/weekend flag  (no apply needed)
+            (
+                pl.col("Date").is_in(calendar_config["holidays"])
+                | pl.col("Date").is_in(calendar_config["weekends"])
+            ).alias("Holiday"),
+        ])
+        .rename({"title": "Worker"})
+        .with_columns([
+            pl.col("Date").dt.strftime("%Y/%m/%d")     # final Date as string
+        ])
+        .select(["Date", "Worker", "Weekday", "Holiday"])
+    )
+
+    # write / append to CSV ------------------------------------------------------
+    csv_path = Path("schedule.csv")
+    # first run → create & write header
+    if not csv_path.exists():
+        df.write_csv(csv_path, include_header=True)
+
+    # later runs → open in ‑a  mode and suppress header
+    else:
+        with open(csv_path, "a", newline="") as f:
+            df.write_csv(f, include_header=False)
+
+
+
+
     return jsonify(assignments)
 
 

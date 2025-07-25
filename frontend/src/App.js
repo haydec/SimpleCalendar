@@ -234,7 +234,6 @@ export default function App() {
 
         {/* add‑name input */}
         <div className="input-row">
-            
           <input
             //className="border px-2 py-1"
             placeholder="New name…"
