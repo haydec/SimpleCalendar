@@ -93,6 +93,8 @@ export default function App() {
   const [loading, setLoading]     = useState(false);
   const [settingsSent, setSent]   = useState(false);
   const [personStats, setPersonStats] = useState({});
+  const [people, setPeople] = useState(["Cillian", "Hosana", "Yuka","Yuuka","Hiroko","Hao","Manal","Satya"]);
+  const [nameInput, setNameInput] = useState("");
   
 
   /* recompute + send settings whenever range changes */
@@ -118,9 +120,11 @@ export default function App() {
         weekends,
         holidays: holidays.map((h) => h.date),
         cage_days: cageDays,
+        workers: people,
       };
     console.log("Payload Start Date: ",payload["start_date"]) 
     console.log("Payload Stop Date: ",payload["end_date"])
+    console.log("Payload Workers: ",payload["workers"])
       try {
         await axios.post("http://localhost:5000/calendar-settings", payload);
         setSent(true);
@@ -130,7 +134,7 @@ export default function App() {
       }
     };
     buildAndSend();
-  }, [range]);
+  }, [range,people]);
 
   /* schedule generation */
   const generateSchedule = async () => {
@@ -155,8 +159,7 @@ export default function App() {
   };
 
 
-  const [people, setPeople] = useState(["Cillian", "Hosana", "Yuka","Yuuka","Hiroko","Hao","Manal","Satya"]);
-  const [nameInput, setNameInput] = useState("");
+
 
   const addPerson = () => {
     const trimmed = nameInput.trim();
@@ -169,10 +172,10 @@ export default function App() {
   };
 
   return (
-  <div className="App p-4">
+  <div className="App">
 
     <button
-      className="btn mb-4"
+      className="GenerateSchedule"
       onClick={generateSchedule}
       disabled={loading || !settingsSent}
     >
@@ -230,9 +233,10 @@ export default function App() {
         </table>
 
         {/* add‑name input */}
-        <div className="mt-3 flex justify-center gap-2">
+        <div className="input-row">
+            
           <input
-            className="border px-2 py-1"
+            //className="border px-2 py-1"
             placeholder="New name…"
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}

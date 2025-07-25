@@ -24,9 +24,10 @@
 *****************************************************************************/
 .calendar-wrapper {
   flex: 0 0 65%;      /*  ‑‑► fixed 55 % of the row, no growing  */
-  max-width: 1200px;   /*  optional: stops it from getting huge  */
+  max-width: 20000px;   /*  optional: stops it from getting huge  */
   min-width: 400px;   /*  optional: usable on small screens     */
   height: 80vh;
+  padding-left: 1.25rem;
 }
 
 /* make FullCalendar fill the wrapper */
@@ -40,7 +41,7 @@
   3. People summary panel (fixed width)
 *****************************************************************************/
 .people-section {
-  width: 280px;              /* tweak to taste */
+  width: 350px;              /* tweak to taste */
 }
 
 /*****************************************************************************
@@ -73,7 +74,7 @@
 table {
   border-collapse: collapse;
   border: 1px solid #8c8c8c;
-  font-size: 0.75rem;
+  font-size: 1.00rem;
   letter-spacing: 0.5px;
   width: 100%;
 }
@@ -84,3 +85,29 @@ tbody tr:nth-child(even) { background: #edeef2; }
 
 td:last-of-type { text-align: center; }   /* delete‑button col */
 tfoot td        { font-weight: bold; }
+
+/*****************************************************************************
+  5. Input styling 
+*****************************************************************************/
+
+.input-row {
+  margin-top: 24px;    /* same as mt-6 */
+  padding-top: 4px;    /* same as pt-1  */
+  display: flex;
+  justify-content: left;
+  gap: 0.5rem;
+}
+
+
+
+.GenerateSchedule {
+  background: #2563eb;          /* blue‑600 */
+  color: #fff;
+  font-weight: 600;
+  padding: 0.55rem 1.2rem;
+  border-radius: 0.375rem;      /* rounded‑md */
+  border: none;
+  cursor: pointer;
+  transition: background 150ms ease;
+  justify-content: left;
+}

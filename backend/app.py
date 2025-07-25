@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 CORS(app)
 
-people = ["Alice", "Bob", "Charlie", "Dana", "Eve"]
+people = ["A","B","C"]
 assignments = []
 
 # Filled by /calendar‑settings
@@ -16,6 +16,7 @@ calendar_config = {
     "holidays":   set(),
     "weekends":   set(),
     "cage_days":  set(),
+    "workers": set(),
 }
 
 # ---------- utility ---------- #
@@ -31,11 +32,23 @@ def cost_fn(d):
 # ---------- routes ---------- #
 @app.route("/generate-schedule")
 def generate_schedule():
+    global people 
+
     print("Generate Schedule")
     print("Calendar Config", calendar_config)
+    print("People: ", people)
     if not (calendar_config["start_date"] and calendar_config["end_date"]):
         return jsonify({"error": "Calendar settings not received yet."}), 400
+    
+    # pull the list sent from the front‑end
+    people = calendar_config.get("workers", [])
+    if not people:
+        return jsonify({"error": "No workers supplied"}), 400
 
+    print("workers: ",calendar_config["workers"])
+    
+    people = calendar_config["workers"]
+    print("people: ",people)
     start_date = datetime.strptime(calendar_config["start_date"], "%Y-%m-%d").date()
     end_date   = datetime.strptime(calendar_config["end_date"],   "%Y-%m-%d").date()
 
@@ -107,12 +120,17 @@ def update_assignment():
 def calendar_settings():
     data = request.get_json()
     try:
+
+
         calendar_config["start_date"] = data["start_date"]
         calendar_config["end_date"]   = data["end_date"]
         parse = lambda lst: {datetime.strptime(d, "%Y-%m-%d").date() for d in lst}
         calendar_config["weekends"]   = parse(data["weekends"])
         calendar_config["holidays"]   = parse(data["holidays"])
         calendar_config["cage_days"]  = parse(data["cage_days"])
+
+        calendar_config["workers"] = data["workers"]
+
         return jsonify({"status": "OK"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
