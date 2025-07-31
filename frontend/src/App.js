@@ -152,6 +152,7 @@ export default function App() {
 
   /* range change from calendar */
   const handleDatesSet = (arg) => {
+    setCurrentMonth(new Date(arg.start.getFullYear(), arg.start.getMonth(), 1));
     const start = formatDateLocal(arg.start);
     const end   = formatDateLocal(arg.end);
     setRange({ start, end });
